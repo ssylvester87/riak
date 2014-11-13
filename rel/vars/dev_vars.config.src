@@ -18,6 +18,8 @@
 {handoff_port,      @HANDOFFPORT@}.
 {pb_ip,             "127.0.0.1"}.
 {pb_port,           @PBPORT@}.
+{pbevents_ip,       "0.0.0.0"}.
+{pbevents_port,     @PBEVENTSPORT@}.
 {storage_backend,   "bitcask"}.
 {sasl_error_log,    "{{platform_log_dir}}/sasl-error.log"}.
 {sasl_log_dir,      "{{platform_log_dir}}/sasl"}.

@@ -21,11 +21,13 @@ YZSOLRPORT=$(($BASE + 4))
 PBPORT=$(($BASE + 7))
 WEBPORT=$(($BASE + 8))
 HANDOFFPORT=$(($BASE + 9))
+PBEVENTSPORT=$(($BASE + 10))
 
-echo "Generating $NAME - node='$NODE' yzsolrjmx=$YZSOLRJMXPORT yzsolr=$YZSOLRPORT pbc=$PBPORT http=$WEBPORT handoff=$HANDOFFPORT"
+echo "Generating $NAME - node='$NODE' yzsolrjmx=$YZSOLRJMXPORT yzsolr=$YZSOLRPORT pbc=$PBPORT http=$WEBPORT handoff=$HANDOFFPORT pbevents=$PBEVENTSPORT"
 sed -e "s/@NODE@/$NODE/" \
     -e "s/@YZSOLRJMXPORT@/$YZSOLRJMXPORT/" \
     -e "s/@YZSOLRPORT@/$YZSOLRPORT/" \
     -e "s/@PBPORT@/$PBPORT/" \
+    -e "s/@PBEVENTSPORT@/$PBEVENTSPORT/" \
     -e "s/@WEBPORT@/$WEBPORT/" \
     -e "s/@HANDOFFPORT@/$HANDOFFPORT/" < $TEMPLATE > $VARFILE
