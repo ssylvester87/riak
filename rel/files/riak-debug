@@ -78,7 +78,12 @@ dump () {
     if [ 0 -eq $retval ]; then
         printf '.' 1>&2
     else
-        printf 'E' 1>&2
+        if [ "true" == "$verbose_output" ]; then
+            printf 'Command '\'"$*"\'' failed. Continuing.' 1>&2
+            echo '' 1>&2 # Cheap, easy, guaranteed newline.
+        else
+            printf 'E' 1>&2
+        fi
     fi
 
     return $retval
@@ -88,12 +93,13 @@ usage () {
 cat << 'EOF'
 riak-debug: Gather info from a node for troubleshooting. See 'man riak-debug'.
 
-Usage: riak-debug [-c] [-l] [-r] [-s] [-e] [FILENAME | -]
+Usage: riak-debug [-c] [-l] [-r] [-s] [-e] [-v] [FILENAME | -]
 
 -c, --cfgs      Gather Riak configuration information.
 -l, --logs      Gather Riak logs.
 -r, --riakcmds  Gather Riak information and command output.
 -s, --syscmds   Gather general system commands.
+-v, --verbose   Print verbose failure messages to stdout
 -e, --extracmds Gather extra command output. These commands are too intense to
                 run on all nodes in a cluster but appropriate for a single node.
 FILENAME        Output filename for the tar.gz archive. Use - to specify stdout.
@@ -120,6 +126,7 @@ get_logs=0
 get_riakcmds=0
 get_syscmds=0
 get_extracmds=0
+verbose_output="false"
 
 ## Use riak config generate to set $riak_app_config and
 ## $riak_vm_args
@@ -150,6 +157,9 @@ while [ -n "$1" ]; do
             ;;
         -e|--extracmds)
             get_extracmds=1
+            ;;
+        -v|--verbose)
+            verbose_output="true"
             ;;
         -)
             # If truly specifying stdout as the output file, it should be last
