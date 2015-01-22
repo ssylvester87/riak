@@ -451,12 +451,19 @@ if [ 1 -eq $get_riakcmds ]; then
     dump cluster-info riak-admin cluster-info $CI local
     chmod 444 $CI
 
+    # Make a flat, easily searchable version of the app.config settings
+    riak_epaths=`make_app_epaths "${riak_app_config}"`
+
+    # Get one http listener (epath might output a newline-separated list).
+    riak_api_http="`epath 'riak_api http' "$riak_epaths" | sed -e 's/^"//' -e 's/" /:/' | head -n1`"
+
+    # Dump the output of the /stats HTTP endpoint.
+    dump riak_http_stats curl -s "http://$riak_api_http/stats"
+
     # Get the latest ring file
     mkdir_or_die "${start_dir}"/"${debug_dir}"/ring/.info
     cd "${start_dir}"/"${debug_dir}"/ring
 
-    # Make a flat, easily searchable version of the app.config settings
-    riak_epaths=`make_app_epaths "${riak_app_config}"`
     ring_dir="`epath 'riak_core ring_state_dir' "$riak_epaths" | sed -e 's/^"//' -e 's/".*$//'`"
     if [ '.' = `echo "$ring_dir" | awk 'BEGIN {FS=""} {print $1}'` ]; then
         # relative path. prepend base dir
