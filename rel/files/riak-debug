@@ -97,6 +97,7 @@ Usage: riak-debug [-c] [-l] [-r] [-s] [-e] [-v] [FILENAME | -]
 
 -c, --cfgs      Gather Riak configuration information.
 -l, --logs      Gather Riak logs.
+-p, --patches   Gather the contents of the basho-patches directory.
 -r, --riakcmds  Gather Riak information and command output.
 -s, --syscmds   Gather general system commands.
 -v, --verbose   Print verbose failure messages to stdout
@@ -104,7 +105,7 @@ Usage: riak-debug [-c] [-l] [-r] [-s] [-e] [-v] [FILENAME | -]
                 run on all nodes in a cluster but appropriate for a single node.
 FILENAME        Output filename for the tar.gz archive. Use - to specify stdout.
 
-Defaults: Get configs, logs, riak commands, and system commands.
+Defaults: Get configs, logs, patches, riak commands, and system commands.
           Output in current directory to NODE_NAME-riak-debug.tar.gz or
           HOSTNAME-riak-debug.tar.gz if NODE_NAME cannot be found.
 EOF
@@ -123,6 +124,7 @@ riak_etc_dir={{runner_etc_dir}}
 
 get_cfgs=0
 get_logs=0
+get_patches=0
 get_riakcmds=0
 get_syscmds=0
 get_extracmds=0
@@ -148,6 +150,9 @@ while [ -n "$1" ]; do
             ;;
         -l|--logs)
             get_logs=1
+            ;;
+        -p|--patches)
+            get_patches=1
             ;;
         -r|--riakcmds)
             get_riakcmds=1
@@ -203,16 +208,17 @@ done
 ### Finish setting up variables and overrides
 ###
 
-if [ 0 -eq $(( $get_cfgs + $get_logs + $get_riakcmds + $get_syscmds + $get_extracmds )) ]; then
+if [ 0 -eq $(( $get_cfgs + $get_logs + $get_patches + $get_riakcmds + $get_syscmds + $get_extracmds )) ]; then
     # Nothing specific was requested, so get everything except extracmds
     get_cfgs=1
     get_logs=1
+    get_patches=1
     get_riakcmds=1
     get_syscmds=1
     get_extracmds=0
 fi
 
-if [ 0 -ne $(( $get_cfgs + $get_logs + $get_riakcmds + $get_extracmds )) ]; then
+if [ 0 -ne $(( $get_cfgs + $get_logs + $get_patches + $get_riakcmds + $get_extracmds )) ]; then
     # Information specific to Riak requested. Need app_epath.sh and must have
     # valid base and etc paths defined.
 
@@ -695,6 +701,28 @@ if [ 1 -eq $get_logs ]; then
             mkdir -p "$0/${1%/*}";
             cp "$1" "$0/$1"
             ' "${start_dir}"/"${debug_dir}"/logs/anti_entropy {} \;
+    fi
+fi
+
+###
+### Gather Riak's basho-patches directory
+###
+
+if [ 1 -eq $get_patches ]; then
+    mkdir_or_die "${start_dir}"/"${debug_dir}"/basho-patches/.info
+    cd "${start_dir}"/"${debug_dir}"/basho-patches
+
+    # As per the below link, this patch should be based off the base_dir.
+    # http://docs.basho.com/riakee/latest/cookbooks/Rolling-Upgrade-to-Enterprise/#Basho-Patches
+    riak_lib_dir="${riak_base_dir}/lib/basho-patches"
+
+    # Use dump to execute the copy. This will provide a progress dot and
+    # capture any error messages.
+    dump cp_basho_patches cp -R "$riak_lib_dir"/* .
+
+    # If the copy succeeded, then the output will be empty and it is unneeded.
+    if [ 0 -eq $? ]; then
+        rm -f cp_basho_patches
     fi
 fi
 
