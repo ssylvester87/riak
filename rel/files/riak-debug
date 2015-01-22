@@ -134,6 +134,7 @@ verbose_output="false"
 ## $riak_vm_args
 gen_result=`"$riak_bin_dir"/riak config generate | cut -d' ' -f 3,5`
 riak_app_config=`echo $gen_result | cut -d' ' -f 1`
+generated_config_dir=`dirname "$riak_app_config"`
 riak_vm_args=`echo $gen_result | cut -d' ' -f 2`
 
 ###
@@ -741,6 +742,13 @@ if [ 1 -eq $get_cfgs ]; then
     # If the copy succeeded, then the output will be empty and it is unneeded.
     if [ 0 -eq $? ]; then
         rm -f cp_cfg
+    fi
+
+    # Use the same process as above.
+    dump cp_generated_cfg cp -R "$generated_config_dir" .
+
+    if [ 0 -eq $? ]; then
+        rm -f cp_generated_cfg
     fi
 fi
 
