@@ -342,6 +342,7 @@ if [ 1 -eq $get_syscmds ]; then
     dump netstat_rn netstat -rn
     dump pfctl_rules pfctl -s rules
     dump pfctl_nat pfctl -s nat
+    dump java_version java -version
 
     # If swapctl exists, prefer it over swapon
     if [ -n "`command -v swapctl`" ]; then
