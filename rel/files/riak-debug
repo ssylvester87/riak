@@ -396,6 +396,7 @@ if [ 1 -eq $get_syscmds ]; then
     [ -f /etc/security/limits.conf ] && dump limits.conf cat /etc/security/limits.conf
     [ -f /var/log/messages ] && dump messages cat /var/log/messages
     [ -f /var/log/syslog ] && dump messages cat /var/log/syslog
+    [ -f /var/log/kern.log ] && dump messages cat /var/log/kern.log
     [ -f /proc/diskstats ] && dump diskstats cat /proc/diskstats
     [ -f /proc/cpuinfo ] && dump cpuinfo cat /proc/cpuinfo
     [ -f /proc/meminfo ] && dump meminfo cat /proc/meminfo
