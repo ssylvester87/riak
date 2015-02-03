@@ -95,7 +95,15 @@ riak-debug: Gather info from a node for troubleshooting. See 'man riak-debug'.
 
 Usage: riak-debug [-c] [-l] [-r] [-s] [-e] [-v] [FILENAME | -]
 
--c, --cfgs      Gather Riak configuration information.
+-c, --cfgs      Gather Riak configuration information (includes everything in
+                platform_etc_dir).
+                Please see the Privacy Note below.
+    --ssl-certs Do not skip the capture of *potentially private* SSL
+                certificates.
+                By default files in the platform_etc_dir with the following
+                extensions are not included in the riak-debug archive: .pfx,
+                .p12, .csr, .sst, .sto, .stl, .pem, .key.
+                Please see the Privacy Note below.
 -l, --logs      Gather Riak logs.
 -p, --patches   Gather the contents of the basho-patches directory.
 -r, --riakcmds  Gather Riak information and command output.
@@ -108,6 +116,15 @@ FILENAME        Output filename for the tar.gz archive. Use - to specify stdout.
 Defaults: Get configs, logs, patches, riak commands, and system commands.
           Output in current directory to NODE_NAME-riak-debug.tar.gz or
           HOSTNAME-riak-debug.tar.gz if NODE_NAME cannot be found.
+
+Privacy Note: When the -c flag is set (included in the defaults) every file in
+              the specified in Riak's `platform_etc_dir` will be copied into the
+              generated debug archive with the exceptions noted above. If there
+              are additional files that you wish to keep out of the archive, the
+              enviroment variable RIAK_EXCLUDE may be filled with a space
+              separated list of file patterns that will be passed into a `find
+              -name`. Any matches will be excluded from the generated archive.
+              E.g. `RIAK_EXCLUDE="'*.key' mySecretFile.txt" riak-debug`
 EOF
 exit
 }
@@ -123,6 +140,7 @@ riak_bin_dir={{runner_script_dir}}
 riak_etc_dir={{runner_etc_dir}}
 
 get_cfgs=0
+get_ssl_certs=0
 get_logs=0
 get_patches=0
 get_riakcmds=0
@@ -148,6 +166,9 @@ while [ -n "$1" ]; do
             ;;
         -c|--cfgs)
             get_cfgs=1
+            ;;
+           --ssl-certs)
+            get_ssl_certs=1
             ;;
         -l|--logs)
             get_logs=1
@@ -204,6 +225,11 @@ while [ -n "$1" ]; do
     esac
     shift
 done
+
+if [ 0 -eq $get_cfgs  -a  1 -eq $get_ssl_certs ]; then
+    echoerr "The --ssl-certs option is meaningless without --cfg. Ignoring."
+    get_ssl_certs=0
+fi
 
 ###
 ### Finish setting up variables and overrides
@@ -747,20 +773,46 @@ fi
 
 if [ 1 -eq $get_cfgs ]; then
     mkdir_or_die "${start_dir}"/"${debug_dir}"/config/.info
+
+    # Capture the needed files from the `riak_etc_dir` directory.
+    cd $riak_etc_dir
+
+    # Convert the list of file blobs to a list of `"! -name <blob> `.
+    # For example if `RIAK_EXCLUDE="*.key mySecretFile"`, this will set
+    # `exclude="! -name *.key ! -name mySecretFile"`.
+    exclude=""
+    for i in `echo $RIAK_EXCLUDE`; do
+        exclude+="! -name $i "
+    done
+    if [ 0 -eq $get_ssl_certs ]; then
+        for i in `echo "'*.pfx' '*.p12' '*.csr' '*.sst' '*.sto' '*.stl' '*.pem' '*.key'"`; do
+            exclude+="! -name $i "
+        done
+    fi
+
+    # Compose the `find` command that will exclude the above list of files,
+    # being aware that an empty `\( \)` will cause a failure in the `find`.
+    if [ "" == "$exclude" ]; then
+        run="find . -type f -exec sh -c '
+                mkdir -p \"\$0/\${1%/*}\";
+                cp \"\$1\" \"\$0/\$1\"
+            ' \"\${start_dir}\"/\"\${debug_dir}\"/config {} \;"
+    else
+        run="find . -type f \\( $exclude \\) -exec sh -c '
+                mkdir -p \"\$0/\${1%/*}\";
+                cp \"\$1\" \"\$0/\$1\"
+            ' \"\${start_dir}\"/\"\${debug_dir}\"/config {} \;"
+    fi
+    eval $run
+
+    # Copy the generated configurations into the archive.
     cd "${start_dir}"/"${debug_dir}"/config
 
     # Use dump to execute the copy. This will provide a progress dot and
     # capture any error messages.
-    dump cp_cfg cp -R "$riak_etc_dir"/* .
-
-    # If the copy succeeded, then the output will be empty and it is unneeded.
-    if [ 0 -eq $? ]; then
-        rm -f cp_cfg
-    fi
-
-    # Use the same process as above.
     dump cp_generated_cfg cp -R "$generated_config_dir" .
 
+    # If the copy succeeded, then the output will be empty and it is unneeded.
     if [ 0 -eq $? ]; then
         rm -f cp_generated_cfg
     fi
