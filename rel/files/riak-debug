@@ -78,7 +78,7 @@ dump () {
     if [ 0 -eq $retval ]; then
         printf '.' 1>&2
     else
-        if [ "true" == "$verbose_output" ]; then
+        if [ $verbose_output -gt 0 ]; then
             printf 'Command '\'"$*"\'' failed. Continuing.' 1>&2
             echo '' 1>&2 # Cheap, easy, guaranteed newline.
         else
@@ -148,7 +148,7 @@ get_riakcmds=0
 get_yzcmds=0
 get_syscmds=0
 get_extracmds=0
-verbose_output="false"
+verbose_output=0
 
 ## Use riak config generate to set $riak_app_config and
 ## $riak_vm_args
@@ -191,7 +191,7 @@ while [ -n "$1" ]; do
             get_extracmds=1
             ;;
         -v|--verbose)
-            verbose_output="true"
+            verbose_output=`expr 1 + $verbose_output`
             ;;
         -)
             # If truly specifying stdout as the output file, it should be last
@@ -849,17 +849,17 @@ if [ 1 -eq $get_cfgs ]; then
     # `exclude="! -name *.key ! -name mySecretFile"`.
     exclude=""
     for i in `echo $RIAK_EXCLUDE`; do
-        exclude+="! -name $i "
+        exclude="${exclude}! -name $i "
     done
     if [ 0 -eq $get_ssl_certs ]; then
         for i in `echo "'*.pfx' '*.p12' '*.csr' '*.sst' '*.sto' '*.stl' '*.pem' '*.key'"`; do
-            exclude+="! -name $i "
+            exclude="${exclude}! -name $i "
         done
     fi
 
     # Compose the `find` command that will exclude the above list of files,
     # being aware that an empty `\( \)` will cause a failure in the `find`.
-    if [ "" == "$exclude" ]; then
+    if [ -n $exclude ]; then
         run="find . -type f -exec sh -c '
                 mkdir -p \"\$0/\${1%/*}\";
                 cp \"\$1\" \"\$0/\$1\"
