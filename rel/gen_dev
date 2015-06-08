@@ -18,14 +18,16 @@ NUMBER=${NAME##dev}
 BASE=$((10000 + 10 * $NUMBER))
 YZSOLRJMXPORT=$(($BASE + 3))
 YZSOLRPORT=$(($BASE + 4))
+RLAPORT=$(($BASE + 5))
 PBPORT=$(($BASE + 7))
 WEBPORT=$(($BASE + 8))
 HANDOFFPORT=$(($BASE + 9))
 
-echo "Generating $NAME - node='$NODE' yzsolrjmx=$YZSOLRJMXPORT yzsolr=$YZSOLRPORT pbc=$PBPORT http=$WEBPORT handoff=$HANDOFFPORT"
+echo "Generating $NAME - node='$NODE' yzsolrjmx=$YZSOLRJMXPORT yzsolr=$YZSOLRPORT rla=$RLAPORT pbc=$PBPORT http=$WEBPORT handoff=$HANDOFFPORT"
 sed -e "s/@NODE@/$NODE/" \
     -e "s/@YZSOLRJMXPORT@/$YZSOLRJMXPORT/" \
     -e "s/@YZSOLRPORT@/$YZSOLRPORT/" \
     -e "s/@PBPORT@/$PBPORT/" \
+    -e "s/@RLAPORT@/$RLAPORT/" \
     -e "s/@WEBPORT@/$WEBPORT/" \
     -e "s/@HANDOFFPORT@/$HANDOFFPORT/" < $TEMPLATE > $VARFILE

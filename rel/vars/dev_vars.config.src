@@ -13,11 +13,13 @@
 %%
 %% etc/app.config
 %%
-{web_ip,            "127.0.0.1"}.
+{web_ip,            "0.0.0.0"}.
 {web_port,          @WEBPORT@}.
 {handoff_port,      @HANDOFFPORT@}.
-{pb_ip,             "127.0.0.1"}.
+{pb_ip,             "0.0.0.0"}.
 {pb_port,           @PBPORT@}.
+{rla_ip,            "0.0.0.0"}.
+{rla_port,          @RLAPORT@}.
 {storage_backend,   "bitcask"}.
 {sasl_error_log,    "{{platform_log_dir}}/sasl-error.log"}.
 {sasl_log_dir,      "{{platform_log_dir}}/sasl"}.
