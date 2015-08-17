@@ -3,7 +3,7 @@
 # ex: ts=4 sw=4 et
 
 # Pull environment for this install
-. "{{runner_base_dir}}/lib/env.sh"
+. "`cd \`dirname $0\` 1>/dev/null && /bin/pwd`/../lib/env.sh"
 
 # Make sure the user running this script is the owner and/or su to that user
 check_user "$@"
@@ -664,8 +664,82 @@ The follow commands can be used to manage bucket types for the cluster:
     esac
 }
 
+oplog_usage()
+{
+echo "Usage of riak-admin oplog command:"
+echo "oplog on #turns logging on, creates new log with default params if no log open"
+echo "oplog off #deactivates logging, does not close log"
+echo "oplog on (one or more options)"
+echo "#Creates a new log and closes current one. If a paramater is not set the default value will be chosen."
+echo "#Default size: 1GB, default duration: infinity, default salt: no_salt (i.e. no hashing is done)."
+echo "Option format:"
+echo "         size <Natural number> #sets max size of log in bytes"
+echo "         duration <Natural number> #sets log duration in ms"
+echo "         salt <Natural number> #sets salt"
+
+}
+oplog_on_no_args()
+{
+ $NODETOOL rpc riak_kv_console oplog_on_no_args
+}
+oplog_on_args()
+{
+ echo Salt: $1
+ echo Size: $2
+ echo Dur: $3
+}
+oplog_off()
+{
+ echo "oplog_off"
+}
+#salt, size, duration
+
+handle_oplog()
+{ 
+    if [ $# -eq 0 ];
+    then oplog_usage
+    elif [ $1 = off -a $# = 1 ];
+    then oplog_off
+    elif [ $1 = on ];
+    then 
+	if [ $# -eq 1 ];
+	then oplog_on_no_args
+	else
+	    local Salt="default"
+	    local Size="default"
+	    local Duration="default"
+	    local Badargs=0
+	    shift 1
+	    while [ $# -ge 2 ];
+	    do 
+		local Option=$1
+		case $Option in
+		    salt)
+			Salt=$2;;
+		    size)
+			Size=$2;;
+		    duration)
+			Duration=$2;;
+		    *)
+			Badargs=1;;
+		esac
+		shift 2
+	    done
+	    if [ $# -eq 1 -o $Badargs -eq 1 ];
+	    then oplog_usage
+	    else
+		oplog_on_args $Salt $Size $Duration
+	    fi
+	fi
+    else oplog_usage  
+    fi
+}
+
 # Check the first argument for instructions
 case "$1" in
+    oplog)
+        shift
+        handle_oplog $@;;
     join)
         if [ "$2" != "-f" ]; then
             echo "The 'join' command has been deprecated in favor of the new "
