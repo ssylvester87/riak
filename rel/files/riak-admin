@@ -667,6 +667,7 @@ The follow commands can be used to manage bucket types for the cluster:
 oplog_usage()
 {
 echo "Usage of riak-admin oplog command:"
+echo "oplog status #prints state of each logger and disk_log:chunk/2 of their log if they have one"
 echo "oplog on #turns logging on, creates new log with default params if no log open"
 echo "oplog off #deactivates logging, does not close log"
 echo "oplog on (one or more options)"
@@ -684,15 +685,16 @@ oplog_on_no_args()
 }
 oplog_on_args()
 {
- echo Salt: $1
- echo Size: $2
- echo Dur: $3
+ $NODETOOL rpc riak_kv_console oplog_on_args $1 $2 $3
 }
 oplog_off()
 {
- echo "oplog_off"
+ $NODETOOL rpc riak_kv_console oplog_off
 }
-#salt, size, duration
+oplog_status()
+{
+$NODETOOL rpc riak_kv_console oplog_status
+}
 
 handle_oplog()
 { 
@@ -700,6 +702,8 @@ handle_oplog()
     then oplog_usage
     elif [ $1 = off -a $# = 1 ];
     then oplog_off
+    elif [ $1 = status -a $# = 1 ];
+    then oplog_status
     elif [ $1 = on ];
     then 
 	if [ $# -eq 1 ];
