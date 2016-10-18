@@ -1,6 +1,6 @@
 #+SETUPFILE: "doc/basho-doc-style.iorg"
 
-Welcome to Riak.
+Welcome to Riak!
 
 * Overview
   Riak is a distributed, decentralized data storage system. 
